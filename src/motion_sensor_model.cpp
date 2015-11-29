@@ -10,10 +10,9 @@ mat motion_model(mat particles,mat odom_meas,mat previous_pose)
   std::normal_distribution<double> distribution1(0.0,alpha1*fabs(delrot1)+alpha2*fabs(deltrans));
   std::normal_distribution<double> distribution2(0.0,alpha3*fabs(deltrans) + alpha4*fabs(delrot1+delrot2));
   std::normal_distribution<double> distribution3(0.0,alpha1*fabs(delrot2)+ alpha2*fabs(deltrans));
-  cout << delrot1 << " " << distribution1(generator1) << " " << delrot2 << " " << distribution2(generator2) << endl;
-  float delcaprot1 = delrot1 - distribution1(generator1);
-  float delcaptrans = deltrans - distribution2(generator2);
-  float delcaprot2 = delrot2 - distribution3(generator3);
+  float delcaprot1 = delrot1 + distribution1(generator1);
+  float delcaptrans = deltrans + distribution2(generator2);
+  float delcaprot2 = delrot2 + distribution3(generator3);
   
   for(int i=0;i<n_particles;i++){
     particles(i,0) = particles(i,0) + delcaptrans * cos(particles(i,2) + delcaprot1);
@@ -26,9 +25,34 @@ return particles;
 
 mat sensor_model(mat map,mat particles,mat laser_scan)
 {
-  double x_loc,y_loc,obs_loc_x,obs_loc_y;
+ double weight;
+ int obs_loc_x,obs_loc_y;
+ for(int i=0;i<n_particles;i++)
+  {
+    weight = 0;
+    for(int j=angle_min-1;j<angle_max;j++){ 
+    obs_loc_x = (particles(i,0) - laser_offset*sin(particles(i,2))+ laser_scan(6+j,0)*cos(particles(i,2)+j+1))/resolution;
+    obs_loc_y = (particles(i,1) + laser_offset*cos(particles(i,2))+ laser_scan(6+j,0)*sin(particles(i,2)+j+1))/resolution;
+    if(obs_loc_x > 799)
+     obs_loc_x = 799;
+    if(obs_loc_y > 799)
+     obs_loc_y = 799;
+    if(obs_loc_x < 0)
+     obs_loc_x = 0;
+    if(obs_loc_y < 0)
+     obs_loc_y = 0;
+    weight = weight + map(obs_loc_x,obs_loc_y);
+  }
+  particles(i,3) = weight + 181;
+ }
+ // cout << particles.col(3) << endl;
+  return particles;
+}
+/*
+ *  double x_loc,y_loc,obs_loc_x,obs_loc_y;
   double theta_rad;
   mat expected_range = zeros<mat>(180,1);
+  //mat obstacles = zeros<mat>(180,2);
   for (int i=0;i<n_particles;i++)
   {
   x_loc = (particles(i,0)+laser_offset*cos(particles(i,2)))/10; // shift to laser frame
@@ -44,17 +68,18 @@ mat sensor_model(mat map,mat particles,mat laser_scan)
 	obs_loc_y = obs_loc_y + inc_srch*sin(particles(i,2)+theta_rad);
       }
       else {
-	expected_range(j-1,0) = sqrt(pow((obs_loc_x-x_loc)*resolution,2)+pow((obs_loc_y-y_loc)*resolution,2));
+	//obstacles(j-1,0) = obs_loc_x; obstacles(j-1,1) = obs_loc_y ;
+	expected_range(j-1,0) = fabs(sqrt(pow((obs_loc_x-x_loc)*resolution,2)+pow((obs_loc_y-y_loc)*resolution,2)) - distribution_laser(generator_laser) );
 	break;
       }
     }
   }
   for(int k=angle_min-1;k<angle_max;k++){
-   particles(i,3)= particles(i,3) + (1/(laser_std_dev)) *fabs(laser_scan(185-k,0) - expected_range(k,0));
-  }
-  particles(i,3) = 1/(particles(i,3)) * weight_scaling;
+   particles(i,3)= particles(i,3) + fabs(laser_scan(185-k,0) - expected_range(k,0));
+   }
+ particles(i,3) = particles(i,3)/weight_scaling;
  }
- return particles;
-}
+ //visualize_scan(map,particles,obstacles);
+ return particles; */
 
 

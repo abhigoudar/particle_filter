@@ -25,7 +25,7 @@ int main(int argc,char** argv)
     return 1;
    }
  // cout << particles << endl;
- for(int j=0;j<2216;j++)
+ for(int j=0;j<=log_length ;j++)
  {
    getline(log_file,meas);
    log_stream.str(meas + " ");
@@ -54,17 +54,15 @@ int main(int argc,char** argv)
      for(int i=0;i<n_laser_meas;i++){
       log_stream >> value;
       laser_meas(i,0) = value; }
-      if(j==0){
-      previous_pose(0,0) = laser_meas(0,0);
-      previous_pose(1,0) = laser_meas(1,0);
-      previous_pose(2,0) = laser_meas(2,0);
-      }
+      odom_meas(0,0) = laser_meas(0,0);
+      odom_meas(1,0) = laser_meas(1,0);
+      odom_meas(2,0) = laser_meas(2,0);
+      particles=motion_model(particles,odom_meas,previous_pose);
       particles=sensor_model(map,particles,laser_meas);
       previous_pose(0,0) = laser_meas(0,0);
       previous_pose(1,0) = laser_meas(1,0);
       previous_pose(2,0) = laser_meas(2,0);
-      particles = resample(particles);
-      cout << j << endl;
+      particles = resample(particles,j);
     }
    to_cvmat(map,particles,j);
   }
