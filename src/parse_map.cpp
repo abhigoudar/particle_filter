@@ -19,7 +19,7 @@ mat parse_map(string file)
     getline(map_file,line);
     istringstream iss(line);
     for(int j=0;j<800;j++)
-     iss >> A(i,j);
+     iss >> A(799-i,799-j);
    }
    return A;
 }

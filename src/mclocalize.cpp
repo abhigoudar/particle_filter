@@ -58,7 +58,7 @@ int main(int argc,char** argv)
       odom_meas(1,0) = laser_meas(1,0);
       odom_meas(2,0) = laser_meas(2,0);
       particles=motion_model(particles,odom_meas,previous_pose);
-      particles=sensor_model(map,particles,laser_meas);
+      particles=sensor_model(map,particles,laser_meas,j);
       previous_pose(0,0) = laser_meas(0,0);
       previous_pose(1,0) = laser_meas(1,0);
       previous_pose(2,0) = laser_meas(2,0);

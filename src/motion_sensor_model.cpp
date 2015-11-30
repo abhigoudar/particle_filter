@@ -23,40 +23,15 @@ mat motion_model(mat particles,mat odom_meas,mat previous_pose)
 return particles;
 } 
 
-mat sensor_model(mat map,mat particles,mat laser_scan)
-{
- double weight;
- int obs_loc_x,obs_loc_y;
- for(int i=0;i<n_particles;i++)
-  {
-    weight = 0;
-    for(int j=angle_min-1;j<angle_max;j++){ 
-    obs_loc_x = (particles(i,0) - laser_offset*sin(particles(i,2))+ laser_scan(6+j,0)*cos(particles(i,2)+j+1))/resolution;
-    obs_loc_y = (particles(i,1) + laser_offset*cos(particles(i,2))+ laser_scan(6+j,0)*sin(particles(i,2)+j+1))/resolution;
-    if(obs_loc_x > 799)
-     obs_loc_x = 799;
-    if(obs_loc_y > 799)
-     obs_loc_y = 799;
-    if(obs_loc_x < 0)
-     obs_loc_x = 0;
-    if(obs_loc_y < 0)
-     obs_loc_y = 0;
-    weight = weight + map(obs_loc_x,obs_loc_y);
-  }
-  particles(i,3) = weight + 181;
- }
- // cout << particles.col(3) << endl;
-  return particles;
-}
-/*
- *  double x_loc,y_loc,obs_loc_x,obs_loc_y;
-  double theta_rad;
-  mat expected_range = zeros<mat>(180,1);
-  //mat obstacles = zeros<mat>(180,2);
+mat sensor_model(mat map,mat particles,mat laser_scan,int j)
+{ 
+ double x_loc,y_loc,obs_loc_x,obs_loc_y;
+ double theta_rad;
+ mat expected_range = zeros<mat>(180,1);
   for (int i=0;i<n_particles;i++)
   {
-  x_loc = (particles(i,0)+laser_offset*cos(particles(i,2)))/10; // shift to laser frame
-  y_loc = (particles(i,1)+laser_offset*sin(particles(i,2)))/10; // shift to laser frame. 
+  x_loc = (particles(i,0))/resolution; // shift to laser frame
+  y_loc = (particles(i,1))/resolution; // shift to laser frame. 
   
   for(int j=angle_min;j<=angle_max;j++){
   theta_rad = double(j*PI/180);
@@ -64,22 +39,19 @@ mat sensor_model(mat map,mat particles,mat laser_scan)
   obs_loc_y = y_loc;
   while(obs_loc_x >=0 && obs_loc_x<=799 && obs_loc_y >=0 && obs_loc_y<=799){
     if(map(int(obs_loc_y),int(obs_loc_x))>detection_threshold){
-	obs_loc_x = obs_loc_x + inc_srch*cos(particles(i,2)+theta_rad);
-	obs_loc_y = obs_loc_y + inc_srch*sin(particles(i,2)+theta_rad);
+	obs_loc_x = obs_loc_x + inc_srch*cos(particles(i,2)+PI/2+theta_rad);
+	obs_loc_y = obs_loc_y + inc_srch*sin(particles(i,2)+PI/2+theta_rad);
       }
       else {
-	//obstacles(j-1,0) = obs_loc_x; obstacles(j-1,1) = obs_loc_y ;
-	expected_range(j-1,0) = fabs(sqrt(pow((obs_loc_x-x_loc)*resolution,2)+pow((obs_loc_y-y_loc)*resolution,2)) - distribution_laser(generator_laser) );
+	expected_range(j-1,0) = fabs(sqrt(pow((obs_loc_x-x_loc)*resolution,2)+pow((obs_loc_y-y_loc)*resolution,2)));
 	break;
       }
     }
   }
   for(int k=angle_min-1;k<angle_max;k++){
-   particles(i,3)= particles(i,3) + fabs(laser_scan(185-k,0) - expected_range(k,0));
+   particles(i,3)= particles(i,3) + fabs(laser_scan(k,0) - expected_range(k,0));
    }
- particles(i,3) = particles(i,3)/weight_scaling;
  }
- //visualize_scan(map,particles,obstacles);
- return particles; */
-
-
+  //cout << particles.col(3) << endl;
+  return particles;
+}
